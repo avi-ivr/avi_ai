@@ -96,6 +96,8 @@ def extract_gemini_text(data, purpose):
         for part in candidate.get("content", {}).get("parts", []):
             if isinstance(part.get("text"), str) and part["text"].strip():
                 return part["text"].strip()
+            if isinstance(part.get("audioTranscription"), str) and part["audioTranscription"].strip():
+                return part["audioTranscription"].strip()
     summary = {
         "purpose": purpose,
         "top_level_keys": list(data.keys()),
