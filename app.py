@@ -56,6 +56,7 @@ def load_gemini_keys():
 
 def gemini_request(payload, model_name=None):
     last_error = None
+    quota_failures = 0
     retryable_statuses = {401, 403, 429, 500, 502, 503, 504}
     model_name = model_name or GEMINI_MODEL
     for index, key in enumerate(load_gemini_keys(), start=1):
@@ -67,6 +68,8 @@ def gemini_request(payload, model_name=None):
                 timeout=REQUEST_TIMEOUT,
             )
             if response.status_code in retryable_statuses:
+                if response.status_code == 429:
+                    quota_failures += 1
                 detail = response.text[:500].replace("\r", " ").replace("\n", " ")
                 logging.error(
                     "Gemini key #%s failed: HTTP %s; detail=%s",
@@ -81,7 +84,9 @@ def gemini_request(payload, model_name=None):
         except requests.RequestException as error:
             last_error = error
             continue
-    raise RuntimeError("כל מפתחות Gemini נכשלו") from last_error
+    if quota_failures:
+        raise RuntimeError("כל מפתחות Gemini הזמינים הגיעו למכסה או נכשלו באימות") from last_error
+    raise RuntimeError("כל מפתחות Gemini נכשלו באימות") from last_error
 
 
 def transcribe_yemot_record(yemot_token, record_name, record_dir):
