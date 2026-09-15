@@ -86,6 +86,28 @@ def gemini_request(payload, model_name=None):
             continue
     if quota_failures:
         raise RuntimeError("כל מפתחות Gemini הזמינים הגיעו למכסה או נכשלו באימות") from last_error
+
+
+    def extract_gemini_text(data, purpose):
+        candidates = data.get("candidates", [])
+        for candidate in candidates:
+            for part in candidate.get("content", {}).get("parts", []):
+                if isinstance(part.get("text"), str) and part["text"].strip():
+                    return part["text"].strip()
+        summary = {
+            "purpose": purpose,
+            "top_level_keys": list(data.keys()),
+            "candidate_count": len(candidates),
+            "finish_reasons": [candidate.get("finishReason") for candidate in candidates],
+            "prompt_feedback": data.get("promptFeedback"),
+            "part_keys": [
+                list(part.keys())
+                for candidate in candidates
+                for part in candidate.get("content", {}).get("parts", [])
+            ],
+        }
+        logging.error("Gemini response contained no text: %s", json.dumps(summary, ensure_ascii=False))
+        raise RuntimeError(f"Gemini לא החזיר טקסט עבור {purpose}")
     raise RuntimeError("כל מפתחות Gemini נכשלו באימות") from last_error
 
 
@@ -118,10 +140,7 @@ def transcribe_yemot_record(yemot_token, record_name, record_dir):
         ]}],
         "generationConfig": {"temperature": 0, "maxOutputTokens": 500},
     }, model_name=GEMINI_TRANSCRIBE_MODEL)
-    candidates = data.get("candidates", [])
-    if not candidates:
-        raise RuntimeError("Gemini לא החזיר תמלול")
-    return candidates[0]["content"]["parts"][0]["text"].strip()
+    return extract_gemini_text(data, "transcription")
 
 
 def load_assistant_config():
