@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: gemini-ivr
+    runtime: python
+    rootDir: .
+    buildCommand: python -m pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --graceful-timeout 30
+    healthCheckPath: /refresh
+    envVars:
+      - key: GEMINI_MODEL
+        value: gemini-3.6-flash
+      - key: GEMINI_TRANSCRIBE_MODEL
+        value: gemini-3.5-transcribe
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: PUBLIC_WEBHOOK_SECRET
+        sync: false
+      - key: TRAINER_WEBHOOK_SECRET
+        sync: false
