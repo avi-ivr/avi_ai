@@ -9,6 +9,8 @@ services:
     envVars:
       - key: GEMINI_MODEL
         value: gemini-3.6-flash
+      - key: APP_VERSION
+        value: 2026-09-15-gemini-text-parser-fix
       - key: GEMINI_TRANSCRIBE_MODEL
         value: gemini-3.5-transcribe
       - key: GEMINI_API_KEY_1

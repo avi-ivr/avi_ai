@@ -15,6 +15,7 @@ from flask import Flask, Response, jsonify, request, send_from_directory
 
 app = Flask(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+APP_VERSION = "2026-09-15-gemini-text-parser-fix"
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "conversation.sqlite3")
 BASE_DIR = Path(__file__).resolve().parent
@@ -86,29 +87,29 @@ def gemini_request(payload, model_name=None):
             continue
     if quota_failures:
         raise RuntimeError("כל מפתחות Gemini הזמינים הגיעו למכסה או נכשלו באימות") from last_error
-
-
-    def extract_gemini_text(data, purpose):
-        candidates = data.get("candidates", [])
-        for candidate in candidates:
-            for part in candidate.get("content", {}).get("parts", []):
-                if isinstance(part.get("text"), str) and part["text"].strip():
-                    return part["text"].strip()
-        summary = {
-            "purpose": purpose,
-            "top_level_keys": list(data.keys()),
-            "candidate_count": len(candidates),
-            "finish_reasons": [candidate.get("finishReason") for candidate in candidates],
-            "prompt_feedback": data.get("promptFeedback"),
-            "part_keys": [
-                list(part.keys())
-                for candidate in candidates
-                for part in candidate.get("content", {}).get("parts", [])
-            ],
-        }
-        logging.error("Gemini response contained no text: %s", json.dumps(summary, ensure_ascii=False))
-        raise RuntimeError(f"Gemini לא החזיר טקסט עבור {purpose}")
     raise RuntimeError("כל מפתחות Gemini נכשלו באימות") from last_error
+
+
+def extract_gemini_text(data, purpose):
+    candidates = data.get("candidates", [])
+    for candidate in candidates:
+        for part in candidate.get("content", {}).get("parts", []):
+            if isinstance(part.get("text"), str) and part["text"].strip():
+                return part["text"].strip()
+    summary = {
+        "purpose": purpose,
+        "top_level_keys": list(data.keys()),
+        "candidate_count": len(candidates),
+        "finish_reasons": [candidate.get("finishReason") for candidate in candidates],
+        "prompt_feedback": data.get("promptFeedback"),
+        "part_keys": [
+            list(part.keys())
+            for candidate in candidates
+            for part in candidate.get("content", {}).get("parts", [])
+        ],
+    }
+    logging.error("Gemini response contained no text: %s", json.dumps(summary, ensure_ascii=False))
+    raise RuntimeError(f"Gemini לא החזיר טקסט עבור {purpose}")
 
 
 def transcribe_yemot_record(yemot_token, record_name, record_dir):
@@ -585,6 +586,7 @@ def health():
 def debug():
     return {
         "status": "ok",
+        "app_version": APP_VERSION,
         "model": GEMINI_MODEL,
         "transcription_model": GEMINI_TRANSCRIBE_MODEL,
         "transcription": "Gemini audio transcription",
