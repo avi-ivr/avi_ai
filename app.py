@@ -35,13 +35,20 @@ if not CONFIG_PATH.is_absolute():
 DB_LOCK = Lock()
 def load_gemini_keys():
     keys = []
-    with API_KEYS_PATH.open(encoding="utf-8") as keys_file:
-        for line in keys_file:
-            key = line.strip()
-            if key and not key.startswith("#"):
-                if "=" in key:
-                    key = key.split("=", 1)[1].strip()
-                keys.append(key)
+    index = 1
+    while os.getenv(f"GEMINI_API_KEY_{index}"):
+        keys.append(os.environ[f"GEMINI_API_KEY_{index}"].strip())
+        index += 1
+    if keys:
+        return keys
+    if API_KEYS_PATH.exists():
+        with API_KEYS_PATH.open(encoding="utf-8") as keys_file:
+            for line in keys_file:
+                key = line.strip()
+                if key and not key.startswith("#"):
+                    if "=" in key:
+                        key = key.split("=", 1)[1].strip()
+                    keys.append(key)
     if not keys:
         raise RuntimeError(f"לא נמצאו מפתחות Gemini בקובץ {API_KEYS_PATH.name}")
     return keys

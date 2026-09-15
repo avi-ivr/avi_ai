@@ -11,6 +11,16 @@ services:
         value: gemini-3.6-flash
       - key: GEMINI_TRANSCRIBE_MODEL
         value: gemini-3.5-transcribe
+      - key: GEMINI_API_KEY_1
+        sync: false
+      - key: GEMINI_API_KEY_2
+        sync: false
+      - key: GEMINI_API_KEY_3
+        sync: false
+      - key: GEMINI_API_KEY_4
+        sync: false
+      - key: GEMINI_API_KEY_5
+        sync: false
       - key: WEBHOOK_SECRET
         sync: false
       - key: PUBLIC_WEBHOOK_SECRET
